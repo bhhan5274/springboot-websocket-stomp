@@ -1,0 +1,5 @@
+rootProject.name = 'websock-chat'
+include 'example'
+include 'example'
+include 'server'
+

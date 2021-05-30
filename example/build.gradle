@@ -1,0 +1,16 @@
+plugins {
+    id 'org.springframework.boot' version '2.4.4'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'java'
+}
+
+dependencies {
+    compile('org.springframework.boot:spring-boot-starter-mustache')
+    compile('org.springframework.boot:spring-boot-starter-web')
+    compile('org.springframework.boot:spring-boot-starter-websocket')
+
+    compile('org.webjars.bower:jquery:3.3.1')
+    compile('org.webjars:sockjs-client:1.5.1')
+    compile('org.webjars:stomp-websocket:2.3.4')
+    compile('org.webjars:webjars-locator:0.30')
+}

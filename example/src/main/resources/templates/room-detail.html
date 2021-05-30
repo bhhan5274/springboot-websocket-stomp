@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{room.name}}</title>
+    <script src="/webjars/jquery/dist/jquery.min.js"></script>
+    <script src="/webjars/sockjs-client/sockjs.min.js"></script>
+    <script src="/webjars/stomp-websocket/stomp.min.js"></script>
+</head>
+<body>
+<h1>{{room.name}}({{room.id}})</h1>
+<div class="content" data-room-id="{{room.id}}" data-member="{{member}}">
+    <ul class="chat_box">
+    </ul>
+    <input name="message">
+    <button class="send">보내기</button>
+</div>
+<script>
+    $(function () {
+        var chatBox = $('.chat_box');
+        var messageInput = $('input[name="message"]');
+        var sendBtn = $('.send');
+        var roomId = $('.content').data('room-id');
+        var member = $('.content').data('member');
+
+        var socket;
+        var stompClient;
+
+        function connectToWebsocket() {
+            socket = new SockJS("http://localhost:8080/stomp-chat");
+            stompClient = Stomp.over(socket);
+            console.log('Trying to connect to Websocket Server...');
+            // Check the list of methods available in this stompClient object
+            console.log('StompClient - ', stompClient);
+
+            // Switch off debug
+            stompClient.debug = () => { };
+
+            // Error handlers. There are many other methods also
+            stompClient.onDisconnect = () => { reConnectWebSocket() }
+            stompClient.onStompError = () => { reConnectWebSocket() }
+            // This is the most important
+            stompClient.onWebSocketClose = () => { reConnectWebSocket() }
+
+            stompClient.connect({}, function () {
+                console.log('Websocket connection established...');
+
+                stompClient.send('/publish/chat/join', {}, JSON.stringify({chatRoomId: roomId, type: 'JOIN', writer: member}));
+                stompClient.subscribe('/subscribe/chat/room/' + roomId, function (chat) {
+                    var content = JSON.parse(chat.body);
+                    chatBox.append('<li>' + content.message + '(' + content.writer + ')</li>')
+                });
+                sendBtn.click(function () {
+                    var message = messageInput.val();
+                    stompClient.send('/publish/chat/message', {}, JSON.stringify({chatRoomId: roomId, type: 'CHAT', message: message, writer: member}));
+                    messageInput.val('');
+                });
+            }, function (error) {
+                console.log("Web socket error", error);
+                reConnectWebSocket();
+            });
+        }
+
+        function reConnectWebSocket() {
+            const retryTimeout = 2;
+             console.log('Re-connecting websocket after', retryTimeout * 1000, 'secs...')
+            sendBtn.unbind("click");
+            // Call the websocket connect method
+            setTimeout(function(){ connectToWebsocket(); }, retryTimeout * 1000);
+        }
+        connectToWebsocket();
+    });
+</script>
+</body>
+</html>
